@@ -1,6 +1,6 @@
 # Contributing
 
-## Developer Environment
+## Developer environment
 
 The blessed setup is using the Nix flake to get a shell.
 
@@ -10,7 +10,7 @@ nix develop
 direnv allow .
 ```
 
-### Documentation Shell
+### Documentation shell
 
 Documentation building requires a separate shell with Pandoc and TeXLive. This keeps the default development environment lighter.
 
@@ -28,6 +28,30 @@ Or run commands directly:
 nix develop '.#manual' --command make -C docs/manual pdf
 ```
 
+## Workspace structure
+
+The project is organized as a Cargo workspace under `lib/`:
+
+```
+lib/
+├── bombadil/           
+├── bombadil-cli/       
+├── bombadil-inspect/
+├── integration-tests/  
+├── ...
+└── nix/                
+```
+
+Most of these directories should be creates, but can be other stuff, like
+`lib/nix`.
+
+Build specific crates with `-p`:
+
+```bash
+cargo build -p bombadil       # Core library only
+cargo build -p bombadil-cli   # CLI binary (includes library)
+```
+
 ## Debugging
 
 See debug logs:
@@ -39,6 +63,24 @@ RUST_LOG=bombadil=debug cargo run -- test https://example.com --headless
 There's also [VSCode launch configs](development/launch.json) for debugging
 with codelldb. These have only been tested from `nvim-dap`, though. Put that
 in `.vscode/launch.json` and modify at will.
+
+### Bombadil Inspect
+
+Inspect a trace file with Bombadil Inspect:
+
+```bash
+cargo run -- inspect /path/to/trace
+```
+
+To work on the Inspect frontend:
+
+```bash
+cd lib/bombadil-inspect
+trunk serve
+```
+
+This only runs the frontend. Run the backend using the `inspect` command in a
+separate tab.
 
 ## Running in podman
 
@@ -61,14 +103,14 @@ podman run -ti localhost/bombadil_docker:latest <SOME_URL>
 ### Integration tests
 
 ```bash
-cargo test --test integration_tests
+cargo test -p integration-tests
 ```
 
 ## Releasing
 
 1. Make sure you're on branch `main` and in a clean state
 1. Create a new branch `release/x.y.z` (with the actual version)
-1. Bump the version in `Cargo.toml`
+1. Bump the version in the root `Cargo.toml` under `[workspace.package]`
 1. `cargo check` (this regenerates the `Cargo.lock` file)
 1. Run:
 

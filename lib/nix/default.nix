@@ -15,7 +15,7 @@
 }:
 let
   src = lib.cleanSourceWith {
-    src = ./..;
+    src = ../..;
     filter =
       path: type:
       (lib.hasSuffix ".ts" path)
@@ -29,27 +29,49 @@ let
       || (craneLib.filterCargoSources path type);
   };
 
-  # Source with a normalized version so that Bombadil version bumps don't
-  # invalidate the deps derivation hash. This is especially useful when
-  # doing releases so that GitHub Actions doesn't have to rebuild deps that
-  # haven't changed.
-  depsSrc = runCommand "bombadil-deps-src" { } ''
-    cp -r ${src} $out
-    chmod -R +w $out
-    sed -i '0,/^version = /{s/^version = .*/version = "0.0.0"/}' $out/Cargo.toml
-    sed -i '/^name = "bombadil"/{n;s/^version = .*/version = "0.0.0"/}' $out/Cargo.lock
-  '';
+  # Workspace crate names, extracted from each member's Cargo.toml.
+  crateNames = lib.pipe (builtins.readDir ../../lib) [
+    (lib.filterAttrs (_: type: type == "directory"))
+    (
+      dirs:
+      lib.filter (name: builtins.pathExists (../../lib + "/${name}/Cargo.toml")) (builtins.attrNames dirs)
+    )
+    (map (dir: (builtins.fromTOML (builtins.readFile (../../lib + "/${dir}/Cargo.toml"))).package.name))
+  ];
+
+  # Minimal source for deps: only cargo metadata so that .ts/.html/etc.
+  # changes don't invalidate the deps derivation hash. Versions are also
+  # zeroed so that version bumps don't cause rebuilds.
+  depsSrc =
+    let
+      cargoOnly = lib.cleanSourceWith {
+        src = ../..;
+        filter = path: type: craneLib.filterCargoSources path type;
+      };
+    in
+    runCommand "bombadil-deps-src" { } ''
+      cp -r ${cargoOnly} $out
+      chmod -R +w $out
+      sed -i '0,/^version = /{s/^version = .*/version = "0.0.0"/}' $out/Cargo.toml
+      for crate in ${lib.concatStringsSep " " crateNames}; do
+        sed -i "/^name = \"$crate\"/{n;s/^version = .*/version = \"0.0.0\"/}" $out/Cargo.lock
+      done
+    '';
 
   commonArgs = {
     inherit src;
     nativeBuildInputs = [
       esbuild
     ];
+    # Exclude the inspect crate from workspace builds since it
+    # targets wasm32 and is built by bombadil-cli's build script.
+    cargoExtraArgs = "--workspace --exclude bombadil-inspect";
   };
   depsArgs = commonArgs // {
     src = depsSrc;
     pname = "bombadil";
     version = "stable";
+    nativeBuildInputs = [ ];
   };
   cargoArtifacts = craneLib.buildDepsOnly depsArgs;
   cargoArtifactsStatic = craneLibStatic.buildDepsOnly depsArgs;
@@ -61,6 +83,7 @@ in
       inherit cargoArtifacts;
       doCheck = false;
       pname = "bombadil";
+      cargoExtraArgs = "-p bombadil-cli";
       meta = {
         mainProgram = "bombadil";
         description = ''
