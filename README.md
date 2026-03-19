@@ -26,6 +26,8 @@ Property-based testing for **mobile UIs** -- the same temporal logic, same auton
 
 Bombadil works on web because browsers expose the DOM. Mobile apps are opaque pixels -- there's no `querySelector` for an iPhone. Bombadil Mobile replaces DOM access with AI vision: instead of querying the DOM for an error dialog, you ask *"Is there an error dialog visible?"* and an AI model reads the screenshot.
 
+Device interaction is powered by [Revyl](https://www.revyl.ai) -- cloud-hosted iOS and Android devices with AI-grounded element targeting, live streaming, and a Python SDK for programmatic control.
+
 ### The core translation
 
 ```
