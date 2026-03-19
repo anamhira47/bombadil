@@ -129,7 +129,14 @@ $ python demos/settings_explorer.py --platform ios --max-steps 10
 All properties held. No bugs found.
 ```
 
-The live viewer URL streams the device screen in real time -- open it on a projector and watch Bombadil tap through Settings autonomously.
+The live viewer URL streams the device screen in real time. Here are recordings from actual runs:
+
+| Run | App | Steps | Properties | Violations | Session Recording |
+|-----|-----|-------|------------|------------|-------------------|
+| Settings Explorer | iOS Settings | 10 | 4 | 0 | [Watch recording](https://app.revyl.ai/tests/execute?workflowRunId=63e26c65-02da-40c3-9c41-8f545a344236&platform=ios) |
+| E-Commerce Bug Hunt | Bug Bazaar | 15 | 5 | 0 | [Watch recording](https://app.revyl.ai/tests/execute?workflowRunId=6b6ad57b-8531-4b8d-b29c-42aa79dd5fcc&platform=ios) |
+
+Each recording shows the full device screen with every tap, swipe, and navigation that Bombadil performed autonomously.
 
 ### Demo: finding bugs in an e-commerce app
 
